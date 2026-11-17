@@ -11,6 +11,7 @@
 | 检查电脑能否连接 NAS | 验证本机客户端证书，并检查 NAS 是否响应。 |
 | 看 SSH 是否已经打开 | 检查 SSH 使用的 22 端口；端口开放也不代表已经登录成功。 |
 | 检查开启 SSH 的前置条件 | 只读检查认证、文件服务身份和 Samba 账号状态；不修改设备，不会开启 SSH。 |
+| 检查文件服务的兼容性 | 创建一个随机名称的临时目录并尝试删除、验证清理；不创建账号，也不会开启 SSH。 |
 | 查看 Samba 账号 | 显示账号数量。没有账号也是正常状态，不影响连接诊断。 |
 | 创建 Samba 账号 | 可尝试创建一个用于局域网文件共享的账号；这是实验功能，目前只做过模拟测试，**没有在真实 NAS 上验证创建**。 |
 
@@ -50,11 +51,16 @@ node bin/xiaomi-nas-tool.js --host NAS_IP ssh status
 # 只读检查 SSH 方案的前置条件；不代表该固件的开启方法已验证
 node bin/xiaomi-nas-tool.js --host NAS_IP ssh preflight
 
+# 创建并清理临时目录，检查文件服务兼容性；这一步会写入 NAS 存储
+node bin/xiaomi-nas-tool.js --host NAS_IP ssh probe
+
 # 查看 Samba 账号数量
 node bin/xiaomi-nas-tool.js --host NAS_IP samba list
 ```
 
 也可在项目目录执行 `npm install -g .`，再使用 `xiaomi-nas-tool --host NAS_IP diagnose`。如客户端证书不在默认位置，可在命令中指定 `--cert-dir DIR`。
+
+`ssh probe` 会在存储区创建一个随机名称的临时目录，并在成功后立即删除、确认不存在。如果创建或清理的结果无法确认，命令会显示需要核对的目录路径；请先检查设备，不要盲目重试。此检查不能验证 SSH 开启方案的完整流程。
 
 ### 创建 Samba 账号（实验性）
 

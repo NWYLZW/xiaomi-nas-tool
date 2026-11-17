@@ -3,6 +3,7 @@ import readline from 'node:readline';
 import { DeviceError, Transport, defaultCertDirectory, tcpOpen } from './client.js';
 import { createAccount, listAccounts } from './samba.js';
 import { sshPreflight } from './ssh-preflight.js';
+import { getWebDavCredentials, makeWebDavRequest, probeNewlineDirectory, ProbeCleanupError } from './webdav.js';
 
 const help = `xiaomi-nas-tool --host NAS_IP [--cert-dir DIR] COMMAND
 
@@ -10,6 +11,7 @@ const help = `xiaomi-nas-tool --host NAS_IP [--cert-dir DIR] COMMAND
   diagnose                      检查认证连接、SSH 端口和 Samba 账号数量
   ssh status                    仅检查 SSH 端口，无需小米客户端或 Samba 账号
   ssh preflight                 只读检查 SSH 方案的文件服务及账号前置条件
+  ssh probe                     测试临时目录的创建和清理（不会开启 SSH）
   samba list                    查看 Samba 账号数量
   samba create --username NAME --path /ABSOLUTE/PATH
                                 创建一个 Samba 账号（实验性）
@@ -43,6 +45,9 @@ export async function main(argv = process.argv.slice(2), dependencies = {}) {
   const probe = dependencies.tcpOpen ?? tcpOpen;
   const certDir = dependencies.defaultCertDirectory ?? defaultCertDirectory;
   const ask = dependencies.readPassword ?? readPassword;
+  const getWebDav = dependencies.getWebDavCredentials ?? getWebDavCredentials;
+  const makeRequest = dependencies.makeWebDavRequest ?? makeWebDavRequest;
+  const probeDirectory = dependencies.probeNewlineDirectory ?? probeNewlineDirectory;
   let parsed;
   try {
     parsed = parseArgs({args: argv, allowPositionals: true, strict: true, options: {
@@ -52,7 +57,7 @@ export async function main(argv = process.argv.slice(2), dependencies = {}) {
   if (parsed.values.help) { out(help); return 0; }
   const {host, username, path: sharePath} = parsed.values;
   const command = parsed.positionals.join(' ');
-  if (!host || !['diagnose', 'ssh status', 'ssh preflight', 'samba list', 'samba create'].includes(command) ||
+  if (!host || !['diagnose', 'ssh status', 'ssh preflight', 'ssh probe', 'samba list', 'samba create'].includes(command) ||
       (command === 'samba create' ? (!username || !sharePath) : (username !== undefined || sharePath !== undefined))) {
     err('参数无效；使用 --help 查看用法。'); return 1;
   }
@@ -65,6 +70,20 @@ export async function main(argv = process.argv.slice(2), dependencies = {}) {
       out(`文件服务和账号前置检查：通过（现有 Samba 账号 ${plan.existingCount} 个，候选位置 ${plan.candidateId}）`);
       out('这是只读检查；候选位置须在实际创建后重新核对，SSH 尚未开启。');
       return 0;
+    }
+    if (command === 'ssh probe') {
+      out('即将创建一个随机名称的临时目录并删除，验证设备文件服务；不会开启 SSH。');
+      try {
+        const credentials = await getWebDav(transport);
+        await probeDirectory(makeRequest(transport, credentials));
+        out('临时目录已创建、删除，并确认不存在。SSH 尚未开启。');
+        return 0;
+      } catch (error) {
+        if (error instanceof ProbeCleanupError) {
+          err(`临时目录可能需要手动核对（URL 编码路径）：${error.probePath}`);
+        }
+        throw error;
+      }
     }
     if (command === 'diagnose') {
       out('SSH 端口 22：' + (await probe(host, 22) ? '开放（尚未验证登录）' : '不可连接'));

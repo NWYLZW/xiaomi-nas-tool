@@ -25,3 +25,24 @@ test('noninteractive password input is rejected', async () => { await assert.rej
 test('help explains that SSH cannot be enabled', async () => {
   const messages = []; assert.equal(await main(['--help'], {out: x => messages.push(x)}), 0); assert.match(messages[0], /不能开启 SSH/);
 });
+
+test('SSH probe explains its temporary change and does not claim SSH is enabled', async () => {
+  const messages=[];
+  const code=await main(['--host','host.test','ssh','probe'], {
+    out:x=>messages.push(x), err:x=>messages.push(x), defaultCertDirectory:()=> 'test',
+    connect:async()=>({}), getWebDavCredentials:async()=>({}), makeWebDavRequest:()=>()=>{},
+    probeNewlineDirectory:async()=>({created:true,removed:true}),
+  });
+  assert.equal(code,0); assert.match(messages.join('\n'),/创建一个随机名称的临时目录并删除/);
+  assert.match(messages.join('\n'),/SSH 尚未开启/);
+});
+
+test('SSH probe reports a recovery path if cleanup is uncertain', async () => {
+  const {ProbeCleanupError}=await import('../src/webdav.js'); const errors=[];
+  const code=await main(['--host','host.test','ssh','probe'], {
+    out:()=>{}, err:x=>errors.push(x), defaultCertDirectory:()=> 'test', connect:async()=>({}),
+    getWebDavCredentials:async()=>({}), makeWebDavRequest:()=>()=>{},
+    probeNewlineDirectory:async()=>{throw new ProbeCleanupError('清理未确认','/pool0/data/test/');},
+  });
+  assert.equal(code,1); assert.match(errors.join('\n'), /\/pool0\/data\/test\//);
+});
