@@ -10,6 +10,7 @@
 | --- | --- |
 | 检查电脑能否连接 NAS | 验证本机客户端证书，并检查 NAS 是否响应。 |
 | 看 SSH 是否已经打开 | 检查 SSH 使用的 22 端口；端口开放也不代表已经登录成功。 |
+| 检查开启 SSH 的前置条件 | 只读检查认证、文件服务身份和 Samba 账号状态；不修改设备，不会开启 SSH。 |
 | 查看 Samba 账号 | 显示账号数量。没有账号也是正常状态，不影响连接诊断。 |
 | 创建 Samba 账号 | 可尝试创建一个用于局域网文件共享的账号；这是实验功能，目前只做过模拟测试，**没有在真实 NAS 上验证创建**。 |
 
@@ -46,6 +47,9 @@ node bin/xiaomi-nas-tool.js --host NAS_IP diagnose
 # 只检查 SSH 端口；不需要登录小米客户端，也不需要 Samba 账号
 node bin/xiaomi-nas-tool.js --host NAS_IP ssh status
 
+# 只读检查 SSH 方案的前置条件；不代表该固件的开启方法已验证
+node bin/xiaomi-nas-tool.js --host NAS_IP ssh preflight
+
 # 查看 Samba 账号数量
 node bin/xiaomi-nas-tool.js --host NAS_IP samba list
 ```
@@ -72,7 +76,7 @@ node bin/xiaomi-nas-tool.js --host NAS_IP samba create --username ACCOUNT --path
 npm test
 ```
 
-`src/client.js` 负责认证与协议，`src/samba.js` 负责账号操作，`src/cli.js` 负责组合命令。读取、写入与验证分开实现；缺失或不符合预期的账号列表视为未知，不会当作空列表。
+`src/client.js` 负责认证与协议，`src/samba.js` 负责账号操作，`src/ssh-preflight.js` 负责只读前置检查，`src/cli.js` 负责组合命令。读取、写入与验证分开实现；缺失或不符合预期的账号列表视为未知，不会当作空列表。`ssh preflight` 输出的空闲位置仅是根据社区对 1.0.9.462 的观察做出的预测，后续写入时必须核对设备实际返回的信息。
 
 ## 参考资料与许可
 

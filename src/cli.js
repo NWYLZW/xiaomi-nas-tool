@@ -2,12 +2,14 @@ import { parseArgs } from 'node:util';
 import readline from 'node:readline';
 import { DeviceError, Transport, defaultCertDirectory, tcpOpen } from './client.js';
 import { createAccount, listAccounts } from './samba.js';
+import { sshPreflight } from './ssh-preflight.js';
 
 const help = `xiaomi-nas-tool --host NAS_IP [--cert-dir DIR] COMMAND
 
 命令：
   diagnose                      检查认证连接、SSH 端口和 Samba 账号数量
   ssh status                    仅检查 SSH 端口，无需小米客户端或 Samba 账号
+  ssh preflight                 只读检查 SSH 方案的文件服务及账号前置条件
   samba list                    查看 Samba 账号数量
   samba create --username NAME --path /ABSOLUTE/PATH
                                 创建一个 Samba 账号（实验性）
@@ -50,7 +52,7 @@ export async function main(argv = process.argv.slice(2), dependencies = {}) {
   if (parsed.values.help) { out(help); return 0; }
   const {host, username, path: sharePath} = parsed.values;
   const command = parsed.positionals.join(' ');
-  if (!host || !['diagnose', 'ssh status', 'samba list', 'samba create'].includes(command) ||
+  if (!host || !['diagnose', 'ssh status', 'ssh preflight', 'samba list', 'samba create'].includes(command) ||
       (command === 'samba create' ? (!username || !sharePath) : (username !== undefined || sharePath !== undefined))) {
     err('参数无效；使用 --help 查看用法。'); return 1;
   }
@@ -58,6 +60,12 @@ export async function main(argv = process.argv.slice(2), dependencies = {}) {
     if (command === 'ssh status') { out('SSH 端口 22：' + (await probe(host, 22) ? '开放（尚未验证登录）' : '不可连接')); return 0; }
     const transport = await connect(host, parsed.values['cert-dir'] ?? certDir());
     out('认证连接：成功');
+    if (command === 'ssh preflight') {
+      const plan = await sshPreflight(transport);
+      out(`文件服务和账号前置检查：通过（现有 Samba 账号 ${plan.existingCount} 个，候选位置 ${plan.candidateId}）`);
+      out('这是只读检查；候选位置须在实际创建后重新核对，SSH 尚未开启。');
+      return 0;
+    }
     if (command === 'diagnose') {
       out('SSH 端口 22：' + (await probe(host, 22) ? '开放（尚未验证登录）' : '不可连接'));
       try { const accounts = await listAccounts(transport); out(`Samba 账号：${accounts.length} 个${accounts.length ? '' : '（空列表是正常状态）'}`); }
