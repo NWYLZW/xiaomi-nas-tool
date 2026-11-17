@@ -15,3 +15,6 @@ dist/
 *.dmg
 cleanup-*.sh
 config.local.*
+node_modules/
+.npm/
+*.tgz
