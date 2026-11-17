@@ -2,21 +2,21 @@ import contextlib
 import io
 import unittest
 from unittest.mock import patch
-from rp05tool import cli
-from rp05tool.client import DeviceError
+from xiaomi_nas_tool import cli
+from xiaomi_nas_tool.client import DeviceError
 
 
 class CliTest(unittest.TestCase):
-    @patch('rp05tool.cli.tcp_open', return_value=False)
-    @patch('rp05tool.cli.default_cert_directory', side_effect=AssertionError('certificate not needed'))
+    @patch('xiaomi_nas_tool.cli.tcp_open', return_value=False)
+    @patch('xiaomi_nas_tool.cli.default_cert_directory', side_effect=AssertionError('certificate not needed'))
     def test_ssh_status_independent_of_authentication(self, _cert, _tcp):
         with contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(cli.main(['--host', 'host.test', 'ssh', 'status']), 0)
 
-    @patch('rp05tool.cli.list_accounts', side_effect=DeviceError('unknown'))
-    @patch('rp05tool.cli.tcp_open', return_value=False)
-    @patch('rp05tool.cli.Transport')
-    @patch('rp05tool.cli.default_cert_directory', return_value='unused')
+    @patch('xiaomi_nas_tool.cli.list_accounts', side_effect=DeviceError('unknown'))
+    @patch('xiaomi_nas_tool.cli.tcp_open', return_value=False)
+    @patch('xiaomi_nas_tool.cli.Transport')
+    @patch('xiaomi_nas_tool.cli.default_cert_directory', return_value='unused')
     def test_diagnose_reports_other_checks_if_samba_unknown(self, _directory, _transport, _tcp, _accounts):
         out = io.StringIO()
         with contextlib.redirect_stdout(out):

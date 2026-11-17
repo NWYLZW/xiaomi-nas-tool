@@ -7,7 +7,7 @@ from .samba import create_account, list_accounts
 
 
 def parser():
-    p = argparse.ArgumentParser(prog='rp05', description='小米智能存储局域网工具（不收集设备信息）')
+    p = argparse.ArgumentParser(prog='xiaomi-nas-tool', description='小米智能存储局域网工具（不收集设备信息）')
     p.add_argument('--host', required=True, help='设备的局域网地址')
     p.add_argument('--cert-dir', help='桌面客户端证书目录，默认自动发现')
     subs = p.add_subparsers(dest='command', required=True)

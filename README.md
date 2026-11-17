@@ -1,6 +1,6 @@
-# RP05 Tool
+# Xiaomi NAS Tool
 
-面向 Xiaomi 智能存储的模块化局域网工具。第三方社区项目，与小米无关联。
+面向 Xiaomi 智能存储的模块化局域网工具。项目名不限定设备型号；RP05 是目前经过验证的设备，并不代表已支持其他型号。第三方社区项目，与小米无关联。
 目前提供认证连接诊断和单项 Samba 账号操作；账号列表为空是正常状态。**尚不提供 SSH 开启或 root 功能。**
 
 ## 状态和适用范围
@@ -23,17 +23,17 @@
 在项目目录执行：
 
 ```sh
-python3 -m rp05tool.cli --host NAS_IP diagnose
-python3 -m rp05tool.cli --host NAS_IP ssh status
-python3 -m rp05tool.cli --host NAS_IP samba list
+python3 -m xiaomi_nas_tool.cli --host NAS_IP diagnose
+python3 -m xiaomi_nas_tool.cli --host NAS_IP ssh status
+python3 -m xiaomi_nas_tool.cli --host NAS_IP samba list
 ```
 
-`ssh status` 只检查端口，不需要客户端证书或 Samba 账号；端口开放也不代表 SSH 登录可用。其他命令需要认证。也可以自行将项目安装到虚拟环境后用 `rp05 --host NAS_IP diagnose`。证书不在默认路径时，在子命令前提供 `--cert-dir`。每次执行只负责当前操作，不写入配置文件。
+`ssh status` 只检查端口，不需要客户端证书或 Samba 账号；端口开放也不代表 SSH 登录可用。其他命令需要认证。也可以自行将项目安装到虚拟环境后用 `xiaomi-nas-tool --host NAS_IP diagnose`。证书不在默认路径时，在子命令前提供 `--cert-dir`。每次执行只负责当前操作，不写入配置文件。
 
 实验性的单账号创建：
 
 ```sh
-python3 -m rp05tool.cli --host NAS_IP samba create --username ACCOUNT --path /ABSOLUTE/PATH
+python3 -m xiaomi_nas_tool.cli --host NAS_IP samba create --username ACCOUNT --path /ABSOLUTE/PATH
 ```
 
 密码通过交互式终端输入，不放在命令参数或日志中。创建前检查现有账号、名字与状态；服务端分配 ID 后读回核验，不硬编码账号编号。写入超时或校验失败时不会自动重试或删除，请在官方客户端检查。**这不是服务端事务**：检查和写入之间可能有其他客户端并发操作；使用时请勿同时修改 Samba 配置。

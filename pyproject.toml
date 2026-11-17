@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "rp05-tool"
+name = "xiaomi-nas-tool"
 version = "0.1.0"
 description = "Small, privacy-conscious tools for Xiaomi Smart Storage"
 readme = "README.md"
@@ -11,7 +11,7 @@ requires-python = ">=3.9"
 license = {text = "MIT"}
 
 [project.scripts]
-rp05 = "rp05tool.cli:main"
+xiaomi-nas-tool = "xiaomi_nas_tool.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["rp05tool*"]
+include = ["xiaomi_nas_tool*"]

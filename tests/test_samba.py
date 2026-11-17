@@ -1,6 +1,6 @@
 import unittest
-from rp05tool.client import DeviceError
-from rp05tool.samba import create_account, list_accounts
+from xiaomi_nas_tool.client import DeviceError
+from xiaomi_nas_tool.samba import create_account, list_accounts
 
 
 class Fake:
